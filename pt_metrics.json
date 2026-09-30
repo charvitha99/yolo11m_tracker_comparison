@@ -1,0 +1,41 @@
+{
+    "model": "yolo11m.pt",
+    "format": "PyTorch",
+    "video": "PNNL_Parking_LOT(1).avi",
+    "inference_settings": {
+        "imgsz": 640,
+        "confidence_threshold": 0.25,
+        "iou_threshold": 0.7,
+        "device": "cpu"
+    },
+    "video_information": {
+        "total_frames": 998
+    },
+    "performance": {
+        "total_processing_time_seconds": 602.52,
+        "average_processing_fps": 1.66,
+        "average_inference_time_ms": 550.33,
+        "inference_fps": 1.82
+    },
+    "detection": {
+        "total_detections": 13053,
+        "average_confidence": 0.7178,
+        "minimum_confidence": 0.2501,
+        "maximum_confidence": 0.9297,
+        "class_counts": {
+            "car": 3457,
+            "person": 9552,
+            "handbag": 39,
+            "tennis racket": 2,
+            "bicycle": 3
+        }
+    },
+    "evaluation": {
+        "precision": null,
+        "recall": null,
+        "f1_score": null,
+        "map50": null,
+        "map50_95": null,
+        "iou": null
+    }
+}

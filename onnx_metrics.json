@@ -1,0 +1,34 @@
+{
+    "model": "yolo11m.onnx",
+    "video": "PNNL_Parking_LOT(1).avi",
+    "video_information": {
+        "total_frames": 998
+    },
+    "performance": {
+        "total_processing_time_seconds": 938.28,
+        "average_processing_fps": 1.06,
+        "average_inference_time_ms": 880.39,
+        "inference_fps": 1.14
+    },
+    "detection": {
+        "total_detections": 13291,
+        "average_confidence": 0.7287,
+        "minimum_confidence": 0.25,
+        "maximum_confidence": 0.9318,
+        "class_counts": {
+            "car": 3536,
+            "person": 9704,
+            "handbag": 45,
+            "tennis racket": 3,
+            "bicycle": 3
+        }
+    },
+    "evaluation": {
+        "precision": null,
+        "recall": null,
+        "f1_score": null,
+        "map50": null,
+        "map50_95": null,
+        "iou": null
+    }
+}

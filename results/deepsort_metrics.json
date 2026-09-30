@@ -1,0 +1,37 @@
+{
+    "model": "yolo11m.pt",
+    "tracker": "Deep SORT",
+    "video": "PNNL_Parking_LOT(1).avi",
+    "configuration": {
+        "imgsz": 640,
+        "confidence_threshold": 0.25,
+        "iou_threshold": 0.7,
+        "device": "cpu"
+    },
+    "video_information": {
+        "total_frames": 998,
+        "width": 1920,
+        "height": 1080,
+        "video_fps": 29.0
+    },
+    "detection": {
+        "total_detections": 13053,
+        "average_confidence": 0.7178
+    },
+    "tracking": {
+        "unique_track_ids": 63,
+        "total_track_observations": 15337,
+        "average_tracks_per_frame": 15.37
+    },
+    "performance": {
+        "total_processing_time_seconds": 1228.91,
+        "average_processing_fps": 0.81
+    },
+    "evaluation": {
+        "tracking_accuracy": null,
+        "id_switches": null,
+        "mota": null,
+        "idf1": null,
+        "hota": null
+    }
+}
