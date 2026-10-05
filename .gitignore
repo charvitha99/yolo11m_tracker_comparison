@@ -74,3 +74,7 @@ Thumbs.db
 # ==============================
 
 *.log
+# Temporary Deep SORT helper scripts
+fix_deepsort_output.py
+fix_deepsort_outputs.py
+create_deepsort_log.py

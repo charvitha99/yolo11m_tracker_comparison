@@ -1,0 +1,8 @@
+services:
+  yolo11m-deepsort:
+    image: yolo11m-deepsort:latest
+    container_name: yolo11m-deepsort-compose
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: python tracker_deepsort.py

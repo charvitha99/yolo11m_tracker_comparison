@@ -1,36 +1,40 @@
-# YOLO11m PT vs ONNX and Deep SORT Object Tracking
+# YOLO11m PT vs ONNX + Deep SORT Object Tracking
 
-## 📌 Project Overview
+## 1. Project Overview
 
-This project evaluates the YOLO11m object detection model in two formats:
+This project performs object detection using the **YOLO11m model** in two formats:
 
-- YOLO11m PyTorch (`.pt`)
-- YOLO11m ONNX (`.onnx`)
+- PyTorch (`.pt`)
+- ONNX (`.onnx`)
 
-The project also implements **Deep SORT** for multi-object tracking using YOLO11m detections.
+Both models are tested using the same input video.
 
-The work is divided into two independent parts:
+The project also implements **Deep SORT** for multi-object tracking using YOLO11m.
 
-1. **YOLO11m PT vs ONNX model comparison**
-2. **YOLO11m + Deep SORT object tracking**
-
----
-
-## 🎯 Objectives
-
-- Run YOLO11m using the PyTorch model.
-- Convert YOLO11m from PyTorch to ONNX.
-- Run the ONNX model on the same video.
-- Compare PT and ONNX performance.
-- Measure detection and inference performance.
-- Implement Deep SORT for multi-object tracking.
-- Generate a tracked output video with bounding boxes, class labels and track IDs.
+The complete Deep SORT pipeline is also **Dockerized** to provide a reproducible execution environment.
 
 ---
 
-## 🧰 Technologies Used
+# 2. Project Objectives
 
-- Python 3.9.13
+The main objectives of this project are:
+
+1. Run YOLO11m using the PyTorch model.
+2. Convert YOLO11m from PyTorch to ONNX format.
+3. Run the ONNX model on the same video.
+4. Compare PT and ONNX performance.
+5. Implement Deep SORT for object tracking.
+6. Generate a tracked output video.
+7. Store detection and tracking information in JSON format.
+8. Collect performance and resource metrics.
+9. Dockerize the complete application.
+10. Maintain a reproducible project environment.
+
+---
+
+# 3. Technologies Used
+
+- Python 3.9
 - YOLO11m
 - Ultralytics
 - PyTorch
@@ -38,38 +42,20 @@ The work is divided into two independent parts:
 - ONNX Runtime
 - OpenCV
 - Deep SORT
-- `deep-sort-realtime`
+- deep-sort-realtime
+- NumPy
+- SciPy
+- psutil
 - FFmpeg
-- Git / GitHub
+- Docker
+- Git
+- GitHub
 
 ---
 
-## 📂 Project Structure
+# 4. Input Video
+
+The project uses:
 
 ```text
-yolo11m_tracker_comparison/
-│
-├── pt_baseline.py
-├── onnx_baseline.py
-├── tracker_deepsort.py
-├── compare_results.py
-│
-├── pt_metrics.json
-├── onnx_metrics.json
-│
-├── README.md
-├── requirements.txt
-├── .gitignore
-│
-├── results/
-│   ├── deepsort_metrics.json
-│   ├── deepsort_tracking.mp4
-│   ├── deepsort_tracking_h264.mp4
-│   └── yolo11m_detections.json
-│
-├── runs/
-│
-├── yolo11m.pt
-├── yolo11m.onnx
-├── PNNL_Parking_LOT(1).avi
-└── venv/
+PNNL_Parking_LOT(1).avi

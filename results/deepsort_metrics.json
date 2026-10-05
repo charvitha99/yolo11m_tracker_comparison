@@ -6,7 +6,7 @@
     "model": {
         "name": "YOLO11m",
         "format": "pt",
-        "path": "yolo11m.pt"
+        "path": "/app/yolo11m.pt"
     },
     "configuration": {
         "confidence_threshold": 0.25,
@@ -15,7 +15,7 @@
         "device": "CPU"
     },
     "video": {
-        "input": "PNNL_Parking_LOT(1).avi",
+        "input": "/app/PNNL_Parking_LOT(1).avi",
         "width": 1920,
         "height": 1080,
         "fps": 29.0,
@@ -25,30 +25,30 @@
         "frame_count": 998,
         "total_detections": 13053,
         "unique_track_ids": 63,
-        "average_active_tracks": 15.367735470941884,
+        "average_active_tracks": 15.37,
         "maximum_active_tracks": 23,
-        "average_track_lifetime": 243.44444444444446,
+        "average_track_lifetime": 243.44,
         "longest_track_lifetime": 996,
-        "average_fps": 0.770956664825987,
-        "average_latency_ms": 1289.7628452905822,
-        "p95_latency_ms": 1755.9327000000167,
-        "total_processing_time_seconds": 1294.4955865
+        "average_fps": 0.75,
+        "average_latency_ms": 1329.28,
+        "p95_latency_ms": 2266.17,
+        "total_processing_time_seconds": 1327.03
     },
     "resources": {
         "process": {
-            "average_cpu_percent": 279.29779559118276,
-            "peak_cpu_percent": 302.2,
-            "average_ram_mb": 2578.7421483592184,
-            "peak_ram_mb": 2930.4921875
+            "average_cpu_percent": 274.23,
+            "peak_cpu_percent": 291.1,
+            "average_ram_mb": 2560.14,
+            "peak_ram_mb": 2908.76
         },
         "system": {
-            "average_cpu_percent": 83.21202404809614,
-            "peak_cpu_percent": 100.0
+            "average_cpu_percent": 69.49,
+            "peak_cpu_percent": 83.9
         }
     },
     "outputs": {
-        "video": "C:\\Users\\CharvithaPeetla\\Documents\\yolo11m_tracker_comparison\\results\\deepsort_tracking.mp4",
-        "json": "C:\\Users\\CharvithaPeetla\\Documents\\yolo11m_tracker_comparison\\results\\deepsort_metrics.json",
-        "log": "C:\\Users\\CharvithaPeetla\\Documents\\yolo11m_tracker_comparison\\results\\deepsort.log"
+        "video": "/app/results/deepsort_tracking.mp4",
+        "json": "/app/results/deepsort_metrics.json",
+        "log": "/app/results/deepsort.log"
     }
 }
