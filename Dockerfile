@@ -62,8 +62,6 @@ COPY tracker_deepsort.py .
 COPY pt_baseline.py .
 COPY onnx_baseline.py .
 COPY compare_results.py .
-COPY create_deepsort_log.py .
-COPY fix_deepsort_outputs.py .
 
 
 # ==========================================
