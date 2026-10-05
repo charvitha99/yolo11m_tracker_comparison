@@ -1,37 +1,54 @@
 {
-    "model": "yolo11m.pt",
-    "tracker": "Deep SORT",
-    "video": "PNNL_Parking_LOT(1).avi",
+    "project": {
+        "name": "YOLO11m + Deep SORT Object Tracking",
+        "tracker": "Deep SORT"
+    },
+    "model": {
+        "name": "YOLO11m",
+        "format": "pt",
+        "path": "yolo11m.pt"
+    },
     "configuration": {
-        "imgsz": 640,
         "confidence_threshold": 0.25,
         "iou_threshold": 0.7,
-        "device": "cpu"
+        "tracker_config": "Deep SORT",
+        "device": "CPU"
     },
-    "video_information": {
-        "total_frames": 998,
+    "video": {
+        "input": "PNNL_Parking_LOT(1).avi",
         "width": 1920,
         "height": 1080,
-        "video_fps": 29.0
+        "fps": 29.0,
+        "total_frames": 998
     },
-    "detection": {
+    "tracking_statistics": {
+        "frame_count": 998,
         "total_detections": 13053,
-        "average_confidence": 0.7178
-    },
-    "tracking": {
         "unique_track_ids": 63,
-        "total_track_observations": 15337,
-        "average_tracks_per_frame": 15.37
+        "average_active_tracks": 15.367735470941884,
+        "maximum_active_tracks": 23,
+        "average_track_lifetime": 243.44444444444446,
+        "longest_track_lifetime": 996,
+        "average_fps": 0.770956664825987,
+        "average_latency_ms": 1289.7628452905822,
+        "p95_latency_ms": 1755.9327000000167,
+        "total_processing_time_seconds": 1294.4955865
     },
-    "performance": {
-        "total_processing_time_seconds": 1228.91,
-        "average_processing_fps": 0.81
+    "resources": {
+        "process": {
+            "average_cpu_percent": 279.29779559118276,
+            "peak_cpu_percent": 302.2,
+            "average_ram_mb": 2578.7421483592184,
+            "peak_ram_mb": 2930.4921875
+        },
+        "system": {
+            "average_cpu_percent": 83.21202404809614,
+            "peak_cpu_percent": 100.0
+        }
     },
-    "evaluation": {
-        "tracking_accuracy": null,
-        "id_switches": null,
-        "mota": null,
-        "idf1": null,
-        "hota": null
+    "outputs": {
+        "video": "C:\\Users\\CharvithaPeetla\\Documents\\yolo11m_tracker_comparison\\results\\deepsort_tracking.mp4",
+        "json": "C:\\Users\\CharvithaPeetla\\Documents\\yolo11m_tracker_comparison\\results\\deepsort_metrics.json",
+        "log": "C:\\Users\\CharvithaPeetla\\Documents\\yolo11m_tracker_comparison\\results\\deepsort.log"
     }
 }
