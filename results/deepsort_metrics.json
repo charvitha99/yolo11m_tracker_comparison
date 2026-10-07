@@ -6,16 +6,16 @@
     "model": {
         "name": "YOLO11m",
         "format": "pt",
-        "path": "/app/yolo11m.pt"
+        "path": "C:\\Users\\CharvithaPeetla\\Documents\\yolo11m_tracker_comparison\\yolo11m.pt"
     },
     "configuration": {
         "confidence_threshold": 0.25,
         "iou_threshold": 0.7,
         "tracker_config": "Deep SORT",
-        "device": "CPU"
+        "device": "cpu"
     },
     "video": {
-        "input": "/app/PNNL_Parking_LOT(1).avi",
+        "input": "C:\\Users\\CharvithaPeetla\\Documents\\yolo11m_tracker_comparison\\PNNL_Parking_LOT(1).avi",
         "width": 1920,
         "height": 1080,
         "fps": 29.0,
@@ -25,30 +25,33 @@
         "frame_count": 998,
         "total_detections": 13053,
         "unique_track_ids": 63,
-        "average_active_tracks": 15.37,
-        "maximum_active_tracks": 23,
-        "average_track_lifetime": 243.44,
-        "longest_track_lifetime": 996,
-        "average_fps": 0.75,
-        "average_latency_ms": 1329.28,
-        "p95_latency_ms": 2266.17,
-        "total_processing_time_seconds": 1327.03
+        "average_active_tracks": 12.8,
+        "maximum_active_tracks": 19,
+        "average_track_lifetime": 202.79,
+        "longest_track_lifetime": 991,
+        "average_fps": 0.81,
+        "average_latency_ms": 1230.98,
+        "p95_latency_ms": 1516.02,
+        "total_processing_time_seconds": 1236.54,
+        "average_confidence": 0.7178,
+        "minimum_confidence": 0.2501,
+        "maximum_confidence": 0.9297
     },
     "resources": {
         "process": {
-            "average_cpu_percent": 274.23,
-            "peak_cpu_percent": 291.1,
-            "average_ram_mb": 2560.14,
-            "peak_ram_mb": 2908.76
+            "average_cpu_percent": 286.99,
+            "peak_cpu_percent": 304.7,
+            "average_ram_mb": 2592.64,
+            "peak_ram_mb": 2937.68
         },
         "system": {
-            "average_cpu_percent": 69.49,
-            "peak_cpu_percent": 83.9
+            "average_cpu_percent": 82.43,
+            "peak_cpu_percent": 100.0
         }
     },
     "outputs": {
-        "video": "/app/results/deepsort_tracking.mp4",
-        "json": "/app/results/deepsort_metrics.json",
-        "log": "/app/results/deepsort.log"
+        "video": "C:\\Users\\CharvithaPeetla\\Documents\\yolo11m_tracker_comparison\\results\\deepsort_tracking.mp4",
+        "json": "C:\\Users\\CharvithaPeetla\\Documents\\yolo11m_tracker_comparison\\results\\deepsort_metrics.json",
+        "log": "C:\\Users\\CharvithaPeetla\\Documents\\yolo11m_tracker_comparison\\results\\deepsort.log"
     }
 }

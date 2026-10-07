@@ -1,155 +1,154 @@
 import os
-import json
 import time
 import statistics
 
 import cv2
 import psutil
 
-from ultralytics import YOLO
-from deep_sort_realtime.deepsort_tracker import DeepSort
+from config import (
+    MODEL_PATH,
+    VIDEO_PATH,
+    OUTPUT_DIR,
+    OUTPUT_VIDEO,
+    OUTPUT_DETECTIONS,
+    OUTPUT_METRICS,
+    OUTPUT_LOG,
+    IMG_SIZE,
+    CONF_THRESHOLD,
+    IOU_THRESHOLD,
+    DEVICE,
+    DEEP_SORT_MAX_AGE,
+    DEEP_SORT_N_INIT,
+    DEEP_SORT_NMS_MAX_OVERLAP,
+    DEEP_SORT_MAX_COSINE_DISTANCE,
+    DEEP_SORT_NN_BUDGET,
+    DEEP_SORT_EMBEDDER,
+    DEEP_SORT_HALF,
+    DEEP_SORT_BGR,
+    DEEP_SORT_EMBEDDER_GPU,
+)
+
+from detector import YOLODetector
+from tracker import DeepSORTTracker
+from output_manager import OutputManager
 
 
 # ============================================================
-# CONFIGURATION
-# ============================================================
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-VIDEO_PATH = os.path.join(
-    BASE_DIR,
-    "PNNL_Parking_LOT(1).avi"
-)
-
-MODEL_PATH = os.path.join(
-    BASE_DIR,
-    "yolo11m.pt"
-)
-
-RESULTS_DIR = os.path.join(
-    BASE_DIR,
-    "results"
-)
-
-os.makedirs(RESULTS_DIR, exist_ok=True)
-
-
-TRACKED_VIDEO_PATH = os.path.join(
-    RESULTS_DIR,
-    "deepsort_tracking.mp4"
-)
-
-DETECTIONS_JSON_PATH = os.path.join(
-    RESULTS_DIR,
-    "yolo11m_detections.json"
-)
-
-METRICS_JSON_PATH = os.path.join(
-    RESULTS_DIR,
-    "deepsort_metrics.json"
-)
-
-LOG_PATH = os.path.join(
-    RESULTS_DIR,
-    "deepsort.log"
-)
-
-
-CONFIDENCE_THRESHOLD = 0.25
-IOU_THRESHOLD = 0.70
-DEVICE = "cpu"
-
-
-# ============================================================
-# MAIN FUNCTION
+# MAIN
 # ============================================================
 
 def main():
 
-    # ========================================================
-    # START TIME
-    # ========================================================
+    print("=" * 60)
+    print("YOLO11m + Deep SORT Object Tracking")
+    print("MODULAR FULL VIDEO RUN")
+    print("=" * 60)
 
-    total_start_time = time.perf_counter()
+    # --------------------------------------------------------
+    # Create output directory
+    # --------------------------------------------------------
 
-    print("Loading YOLO11m...")
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    model = YOLO(MODEL_PATH)
+    # --------------------------------------------------------
+    # Initialize YOLO detector
+    # --------------------------------------------------------
 
-    print("YOLO11m loaded successfully.")
-
-
-    # ========================================================
-    # INITIALIZE DEEP SORT
-    # ========================================================
-
-    print("Initializing Deep SORT...")
-
-    tracker = DeepSort(
-        max_age=30,
-        n_init=3,
-        nms_max_overlap=1.0,
-        max_cosine_distance=0.2,
-        nn_budget=None,
-        embedder="mobilenet",
-        half=False,
-        bgr=True,
-        embedder_gpu=False
+    detector = YOLODetector(
+        MODEL_PATH,
+        IMG_SIZE,
+        CONF_THRESHOLD,
+        IOU_THRESHOLD,
+        DEVICE
     )
 
-    print("Deep SORT initialized successfully.")
+    # --------------------------------------------------------
+    # Initialize Deep SORT tracker
+    # --------------------------------------------------------
 
+    tracker = DeepSORTTracker(
+        DEEP_SORT_MAX_AGE,
+        DEEP_SORT_N_INIT,
+        DEEP_SORT_NMS_MAX_OVERLAP,
+        DEEP_SORT_MAX_COSINE_DISTANCE,
+        DEEP_SORT_NN_BUDGET,
+        DEEP_SORT_EMBEDDER,
+        DEEP_SORT_HALF,
+        DEEP_SORT_BGR,
+        DEEP_SORT_EMBEDDER_GPU
+    )
 
-    # ========================================================
-    # OPEN VIDEO
-    # ========================================================
+    # --------------------------------------------------------
+    # Initialize Output Manager
+    # --------------------------------------------------------
+
+    output_manager = OutputManager(
+        OUTPUT_VIDEO,
+        OUTPUT_DETECTIONS,
+        OUTPUT_METRICS
+    )
+
+    # --------------------------------------------------------
+    # Open video
+    # --------------------------------------------------------
 
     cap = cv2.VideoCapture(VIDEO_PATH)
 
     if not cap.isOpened():
         raise RuntimeError(
-            f"Could not open video: {VIDEO_PATH}"
+            f"Unable to open video: {VIDEO_PATH}"
         )
 
+    video_width = int(
+        cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    )
 
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    video_fps = cap.get(cv2.CAP_PROP_FPS)
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    video_height = int(
+        cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    )
 
+    video_fps = cap.get(
+        cv2.CAP_PROP_FPS
+    )
+
+    total_video_frames = int(
+        cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    )
 
     print()
-    print("========== VIDEO INFORMATION ==========")
-    print(f"Resolution: {width} x {height}")
+    print("Video information:")
+    print(f"Width: {video_width}")
+    print(f"Height: {video_height}")
     print(f"FPS: {video_fps}")
-    print(f"Total frames: {total_frames}")
-    print("=======================================")
+    print(f"Total frames: {total_video_frames}")
     print()
 
+    # --------------------------------------------------------
+    # Video writer
+    # --------------------------------------------------------
 
-    # ========================================================
-    # VIDEO WRITER
-    # ========================================================
-
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    fourcc = cv2.VideoWriter_fourcc(
+        *"mp4v"
+    )
 
     writer = cv2.VideoWriter(
-        TRACKED_VIDEO_PATH,
+        OUTPUT_VIDEO,
         fourcc,
         video_fps,
-        (width, height)
+        (video_width, video_height)
     )
 
     if not writer.isOpened():
         cap.release()
         raise RuntimeError(
-            f"Could not create output video: {TRACKED_VIDEO_PATH}"
+            f"Unable to create output video: {OUTPUT_VIDEO}"
         )
 
+    # --------------------------------------------------------
+    # Statistics
+    # --------------------------------------------------------
 
-    # ========================================================
-    # TRACKING STATISTICS
-    # ========================================================
+    frame_number = 0
 
     total_detections = 0
 
@@ -161,27 +160,25 @@ def main():
 
     confidence_scores = []
 
-    frame_detections = {}
-
-    latency_values = []
+    frame_latencies = []
 
     process_cpu_values = []
+
     process_ram_values = []
 
     system_cpu_values = []
 
+    process = psutil.Process(
+        os.getpid()
+    )
+
+    start_time = time.time()
 
     # ========================================================
-    # PROCESS VIDEO
+    # PROCESS COMPLETE VIDEO
     # ========================================================
-
-    frame_number = 0
-
-    process = psutil.Process(os.getpid())
 
     while True:
-
-        frame_start = time.perf_counter()
 
         ret, frame = cap.read()
 
@@ -190,146 +187,76 @@ def main():
 
         frame_number += 1
 
+        frame_start = time.time()
 
-        # ====================================================
-        # YOLO DETECTION
-        # ====================================================
+        # ----------------------------------------------------
+        # YOLO detection
+        # ----------------------------------------------------
 
-        results = model.predict(
-            source=frame,
-            imgsz=640,
-            conf=CONFIDENCE_THRESHOLD,
-            iou=IOU_THRESHOLD,
-            device=DEVICE,
-            verbose=False
-        )
+        (
+            detections_for_tracker,
+            frame_detection_data
+        ) = detector.detect(frame)
 
-        result = results[0]
-
-
-        # ====================================================
-        # PREPARE DEEP SORT DETECTIONS
-        # ====================================================
-
-        detections_for_tracker = []
-
-        frame_detection_data = []
-
-
-        if result.boxes is not None:
-
-            for box in result.boxes:
-
-                xyxy = box.xyxy[0].cpu().numpy()
-
-                x1, y1, x2, y2 = map(
-                    float,
-                    xyxy
-                )
-
-                confidence = float(
-                    box.conf[0].cpu().item()
-                )
-
-                class_id = int(
-                    box.cls[0].cpu().item()
-                )
-
-                class_name = (
-                    model.names[class_id]
-                    if class_id in model.names
-                    else str(class_id)
-                )
-
-
-                width_box = x2 - x1
-                height_box = y2 - y1
-
-
-                detections_for_tracker.append(
-                    (
-                        [
-                            x1,
-                            y1,
-                            width_box,
-                            height_box
-                        ],
-                        confidence,
-                        class_name
-                    )
-                )
-
-
-                frame_detection_data.append(
-                    {
-                        "bbox": [
-                            x1,
-                            y1,
-                            x2,
-                            y2
-                        ],
-                        "confidence": confidence,
-                        "class_id": class_id,
-                        "class_name": class_name
-                    }
-                )
-
-
-                total_detections += 1
-                confidence_scores.append(confidence)
-
-
-        frame_detections[str(frame_number)] = (
+        total_detections += len(
             frame_detection_data
         )
 
+        for detection in frame_detection_data:
 
-        # ====================================================
-        # DEEP SORT TRACKING
-        # ====================================================
+            confidence_scores.append(
+                detection["confidence"]
+            )
 
-        tracks = tracker.update_tracks(
-            detections_for_tracker,
-            frame=frame
+        # ----------------------------------------------------
+        # Store detections
+        # ----------------------------------------------------
+
+        output_manager.add_frame_detections(
+            frame_number,
+            frame_detection_data
         )
 
+        # ----------------------------------------------------
+        # Deep SORT tracking
+        # ----------------------------------------------------
+
+        tracks = tracker.update(
+            detections_for_tracker,
+            frame
+        )
 
         active_track_count = 0
-
 
         for track in tracks:
 
             if not track.is_confirmed():
                 continue
 
-            if track.time_since_update > 1:
+            if track.time_since_update > 0:
                 continue
-
 
             active_track_count += 1
 
-
             track_id = track.track_id
 
-            unique_track_ids.add(track_id)
+            unique_track_ids.add(
+                track_id
+            )
 
-
+            # ------------------------------------------------
             # Track lifetime
+            # ------------------------------------------------
+
             if track_id not in track_lifetimes:
+                track_lifetimes[track_id] = 0
 
-                track_lifetimes[track_id] = {
-                    "start_frame": frame_number,
-                    "end_frame": frame_number
-                }
+            track_lifetimes[track_id] += 1
 
-            else:
+            # ------------------------------------------------
+            # Bounding box
+            # ------------------------------------------------
 
-                track_lifetimes[track_id][
-                    "end_frame"
-                ] = frame_number
-
-
-            # Get bounding box
             ltrb = track.to_ltrb()
 
             x1, y1, x2, y2 = map(
@@ -337,24 +264,20 @@ def main():
                 ltrb
             )
 
+            # ------------------------------------------------
+            # Class name
+            # ------------------------------------------------
 
-            # Get class
-            class_name = track.get_det_class()
+            class_name = "object"
 
-            if class_name is None:
-                class_name = "object"
+            if track.det_class is not None:
+                class_name = str(
+                    track.det_class
+                )
 
-
-            # Confidence
-            track_confidence = track.det_conf
-
-            if track_confidence is None:
-                track_confidence = 0.0
-
-
-            # =================================================
-            # DRAW TRACK
-            # =================================================
+            # ------------------------------------------------
+            # Draw bounding box
+            # ------------------------------------------------
 
             cv2.rectangle(
                 frame,
@@ -364,13 +287,14 @@ def main():
                 2
             )
 
+            # ------------------------------------------------
+            # Draw ID and class
+            # ------------------------------------------------
 
             label = (
                 f"ID: {track_id} "
-                f"{class_name} "
-                f"{track_confidence:.2f}"
+                f"{class_name}"
             )
-
 
             cv2.putText(
                 frame,
@@ -382,198 +306,133 @@ def main():
                 2
             )
 
-
         active_tracks_per_frame.append(
             active_track_count
         )
 
-
-        # ====================================================
-        # FRAME INFORMATION
-        # ====================================================
+        # ----------------------------------------------------
+        # Frame information
+        # ----------------------------------------------------
 
         cv2.putText(
             frame,
-            f"Frame: {frame_number}/{total_frames}",
-            (20, 30),
+            f"Frame: {frame_number}/{total_video_frames}",
+            (20, 35),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.8,
             (0, 255, 0),
             2
         )
-
 
         cv2.putText(
             frame,
             f"Active Tracks: {active_track_count}",
-            (20, 60),
+            (20, 70),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.8,
             (0, 255, 0),
             2
         )
 
-
-        # ====================================================
-        # WRITE FRAME
-        # ====================================================
+        # ----------------------------------------------------
+        # Write output frame
+        # ----------------------------------------------------
 
         writer.write(frame)
 
+        # ----------------------------------------------------
+        # Performance measurements
+        # ----------------------------------------------------
 
-        # ====================================================
-        # RESOURCE METRICS
-        # ====================================================
+        frame_latency = (
+            time.time() - frame_start
+        ) * 1000
 
-        process_cpu = process.cpu_percent(
-            interval=None
+        frame_latencies.append(
+            frame_latency
         )
 
-        process_memory = (
+        process_cpu_values.append(
+            process.cpu_percent()
+        )
+
+        process_ram_values.append(
             process.memory_info().rss
             / (1024 * 1024)
         )
 
-        system_cpu = psutil.cpu_percent(
-            interval=None
-        )
-
-
-        process_cpu_values.append(
-            process_cpu
-        )
-
-        process_ram_values.append(
-            process_memory
-        )
-
         system_cpu_values.append(
-            system_cpu
+            psutil.cpu_percent()
         )
 
+        # ----------------------------------------------------
+        # Progress
+        # ----------------------------------------------------
 
-        # ====================================================
-        # FRAME LATENCY
-        # ====================================================
-
-        frame_latency = (
-            time.perf_counter()
-            - frame_start
-        ) * 1000
-
-        latency_values.append(
-            frame_latency
+        print(
+            f"Processed frame "
+            f"{frame_number}/{total_video_frames}"
         )
-
-
-        # ====================================================
-        # PROGRESS
-        # ====================================================
-
-        if frame_number % 50 == 0:
-
-            print(
-                f"Processed "
-                f"{frame_number}/{total_frames} frames"
-            )
-
 
     # ========================================================
-    # RELEASE RESOURCES
+    # CLEANUP
     # ========================================================
 
     cap.release()
     writer.release()
 
-
-    # ========================================================
-    # TOTAL PROCESSING TIME
-    # ========================================================
-
     total_processing_time = (
-        time.perf_counter()
-        - total_start_time
+        time.time() - start_time
     )
 
+    # ========================================================
+    # CALCULATE METRICS
+    # ========================================================
 
     average_fps = (
-        total_frames / total_processing_time
+        frame_number / total_processing_time
         if total_processing_time > 0
         else 0
     )
 
-
     average_latency = (
-        statistics.mean(latency_values)
-        if latency_values
+        statistics.mean(frame_latencies)
+        if frame_latencies
         else 0
     )
 
+    # --------------------------------------------------------
+    # P95 latency
+    # --------------------------------------------------------
 
-    # ========================================================
-    # P95 LATENCY
-    # ========================================================
-
-    if latency_values:
+    if frame_latencies:
 
         sorted_latencies = sorted(
-            latency_values
+            frame_latencies
         )
 
-        index = int(
+        p95_index = int(
             0.95 * (len(sorted_latencies) - 1)
         )
 
-        p95_latency = sorted_latencies[index]
+        p95_latency = sorted_latencies[
+            p95_index
+        ]
 
     else:
-
         p95_latency = 0
 
-
-    # ========================================================
-    # TRACK LIFETIME
-    # ========================================================
-
-    lifetime_values = []
-
-    for track_id, lifetime in track_lifetimes.items():
-
-        lifetime_frames = (
-            lifetime["end_frame"]
-            - lifetime["start_frame"]
-            + 1
-        )
-
-        lifetime_values.append(
-            lifetime_frames
-        )
-
-
-    average_track_lifetime = (
-        statistics.mean(lifetime_values)
-        if lifetime_values
-        else 0
-    )
-
-
-    longest_track_lifetime = (
-        max(lifetime_values)
-        if lifetime_values
-        else 0
-    )
-
-
-    # ========================================================
-    # ACTIVE TRACK STATISTICS
-    # ========================================================
+    # --------------------------------------------------------
+    # Active tracks
+    # --------------------------------------------------------
 
     average_active_tracks = (
-        statistics.mean(active_tracks_per_frame)
+        statistics.mean(
+            active_tracks_per_frame
+        )
         if active_tracks_per_frame
         else 0
     )
-
 
     maximum_active_tracks = (
         max(active_tracks_per_frame)
@@ -581,38 +440,58 @@ def main():
         else 0
     )
 
+    # --------------------------------------------------------
+    # Track lifetime
+    # --------------------------------------------------------
 
-    # ========================================================
-    # CONFIDENCE STATISTICS
-    # ========================================================
+    average_track_lifetime = (
+        statistics.mean(
+            track_lifetimes.values()
+        )
+        if track_lifetimes
+        else 0
+    )
 
-    if confidence_scores:
+    longest_track_lifetime = (
+        max(
+            track_lifetimes.values()
+        )
+        if track_lifetimes
+        else 0
+    )
 
-        average_confidence = statistics.mean(
+    # --------------------------------------------------------
+    # Confidence
+    # --------------------------------------------------------
+
+    average_confidence = (
+        statistics.mean(
             confidence_scores
         )
+        if confidence_scores
+        else 0
+    )
 
-        minimum_confidence = min(
-            confidence_scores
-        )
+    minimum_confidence = (
+        min(confidence_scores)
+        if confidence_scores
+        else 0
+    )
 
-        maximum_confidence = max(
-            confidence_scores
-        )
+    maximum_confidence = (
+        max(confidence_scores)
+        if confidence_scores
+        else 0
+    )
 
-    else:
-
-        average_confidence = 0
-        minimum_confidence = 0
-        maximum_confidence = 0
-
-
-    # ========================================================
-    # RESOURCE STATISTICS
-    # ========================================================
+    # --------------------------------------------------------
+    # Process CPU
+    # --------------------------------------------------------
 
     average_process_cpu = (
-        statistics.mean(process_cpu_values)
+        statistics.mean(
+            process_cpu_values
+        )
         if process_cpu_values
         else 0
     )
@@ -623,8 +502,14 @@ def main():
         else 0
     )
 
+    # --------------------------------------------------------
+    # Process RAM
+    # --------------------------------------------------------
+
     average_process_ram = (
-        statistics.mean(process_ram_values)
+        statistics.mean(
+            process_ram_values
+        )
         if process_ram_values
         else 0
     )
@@ -635,8 +520,14 @@ def main():
         else 0
     )
 
+    # --------------------------------------------------------
+    # System CPU
+    # --------------------------------------------------------
+
     average_system_cpu = (
-        statistics.mean(system_cpu_values)
+        statistics.mean(
+            system_cpu_values
+        )
         if system_cpu_values
         else 0
     )
@@ -646,24 +537,6 @@ def main():
         if system_cpu_values
         else 0
     )
-
-
-    # ========================================================
-    # ABSOLUTE OUTPUT PATHS
-    # ========================================================
-
-    absolute_video_path = os.path.abspath(
-        TRACKED_VIDEO_PATH
-    )
-
-    absolute_json_path = os.path.abspath(
-        METRICS_JSON_PATH
-    )
-
-    absolute_log_path = os.path.abspath(
-        LOG_PATH
-    )
-
 
     # ========================================================
     # METRICS JSON
@@ -679,27 +552,31 @@ def main():
         "model": {
             "name": "YOLO11m",
             "format": "pt",
-            "path": os.path.abspath(MODEL_PATH)
+            "path": os.path.abspath(
+                MODEL_PATH
+            )
         },
 
         "configuration": {
-            "confidence_threshold": CONFIDENCE_THRESHOLD,
+            "confidence_threshold": CONF_THRESHOLD,
             "iou_threshold": IOU_THRESHOLD,
             "tracker_config": "Deep SORT",
-            "device": "CPU"
+            "device": DEVICE
         },
 
         "video": {
-            "input": os.path.abspath(VIDEO_PATH),
-            "width": width,
-            "height": height,
+            "input": os.path.abspath(
+                VIDEO_PATH
+            ),
+            "width": video_width,
+            "height": video_height,
             "fps": video_fps,
-            "total_frames": total_frames
+            "total_frames": frame_number
         },
 
         "tracking_statistics": {
 
-            "frame_count": total_frames,
+            "frame_count": frame_number,
 
             "total_detections": total_detections,
 
@@ -712,14 +589,16 @@ def main():
                 2
             ),
 
-            "maximum_active_tracks": maximum_active_tracks,
+            "maximum_active_tracks":
+                maximum_active_tracks,
 
             "average_track_lifetime": round(
                 average_track_lifetime,
                 2
             ),
 
-            "longest_track_lifetime": longest_track_lifetime,
+            "longest_track_lifetime":
+                longest_track_lifetime,
 
             "average_fps": round(
                 average_fps,
@@ -736,9 +615,25 @@ def main():
                 2
             ),
 
-            "total_processing_time_seconds": round(
-                total_processing_time,
-                2
+            "total_processing_time_seconds":
+                round(
+                    total_processing_time,
+                    2
+                ),
+
+            "average_confidence": round(
+                average_confidence,
+                4
+            ),
+
+            "minimum_confidence": round(
+                minimum_confidence,
+                4
+            ),
+
+            "maximum_confidence": round(
+                maximum_confidence,
+                4
             )
         },
 
@@ -746,99 +641,76 @@ def main():
 
             "process": {
 
-                "average_cpu_percent": round(
-                    average_process_cpu,
-                    2
-                ),
+                "average_cpu_percent":
+                    round(
+                        average_process_cpu,
+                        2
+                    ),
 
-                "peak_cpu_percent": round(
-                    peak_process_cpu,
-                    2
-                ),
+                "peak_cpu_percent":
+                    round(
+                        peak_process_cpu,
+                        2
+                    ),
 
-                "average_ram_mb": round(
-                    average_process_ram,
-                    2
-                ),
+                "average_ram_mb":
+                    round(
+                        average_process_ram,
+                        2
+                    ),
 
-                "peak_ram_mb": round(
-                    peak_process_ram,
-                    2
-                )
+                "peak_ram_mb":
+                    round(
+                        peak_process_ram,
+                        2
+                    )
             },
 
             "system": {
 
-                "average_cpu_percent": round(
-                    average_system_cpu,
-                    2
-                ),
+                "average_cpu_percent":
+                    round(
+                        average_system_cpu,
+                        2
+                    ),
 
-                "peak_cpu_percent": round(
-                    peak_system_cpu,
-                    2
-                )
+                "peak_cpu_percent":
+                    round(
+                        peak_system_cpu,
+                        2
+                    )
             }
         },
 
         "outputs": {
 
-            "video": absolute_video_path,
+            "video": os.path.abspath(
+                OUTPUT_VIDEO
+            ),
 
-            "json": absolute_json_path,
+            "json": os.path.abspath(
+                OUTPUT_METRICS
+            ),
 
-            "log": absolute_log_path
+            "log": os.path.abspath(
+                OUTPUT_LOG
+            )
         }
     }
 
-
     # ========================================================
-    # SAVE METRICS
-    # ========================================================
-
-    with open(
-        METRICS_JSON_PATH,
-        "w",
-        encoding="utf-8"
-    ) as file:
-
-        json.dump(
-            metrics,
-            file,
-            indent=4
-        )
-
-
-    # ========================================================
-    # SAVE DETECTIONS
+    # SAVE DETECTION JSON
     # ========================================================
 
-    detection_output = {
+    output_manager.save_detection_json()
 
-        "project": "YOLO11m + Deep SORT",
+    # ========================================================
+    # SAVE METRICS JSON
+    # ========================================================
 
-        "video": os.path.abspath(
-            VIDEO_PATH
-        ),
-
-        "total_frames": total_frames,
-
-        "detections": frame_detections
-    }
-
-
-    with open(
-        DETECTIONS_JSON_PATH,
-        "w",
-        encoding="utf-8"
-    ) as file:
-
-        json.dump(
-            detection_output,
-            file,
-            indent=4
-        )
-
+    output_manager.save_metrics(
+        metrics
+    )
 
     # ========================================================
     # SAVE LOG
@@ -851,61 +723,110 @@ Project: YOLO11m + Deep SORT Object Tracking
 Tracker: Deep SORT
 
 ========== VIDEO ==========
-Input: {os.path.abspath(VIDEO_PATH)}
-Resolution: {width} x {height}
-FPS: {video_fps}
-Total Frames: {total_frames}
+
+Input:
+{os.path.abspath(VIDEO_PATH)}
+
+Frames processed: {frame_number}
+Video FPS: {video_fps}
 
 ========== TRACKING ==========
-Total Detections: {total_detections}
-Unique Track IDs: {len(unique_track_ids)}
-Average Active Tracks: {average_active_tracks:.2f}
-Maximum Active Tracks: {maximum_active_tracks}
-Average Track Lifetime: {average_track_lifetime:.2f}
-Longest Track Lifetime: {longest_track_lifetime}
+
+Total detections: {total_detections}
+Unique track IDs: {len(unique_track_ids)}
+
+Average active tracks:
+{average_active_tracks:.2f}
+
+Maximum active tracks:
+{maximum_active_tracks}
+
+Average track lifetime:
+{average_track_lifetime:.2f} frames
+
+Longest track lifetime:
+{longest_track_lifetime} frames
 
 ========== PERFORMANCE ==========
-Average FPS: {average_fps:.2f}
-Average Latency: {average_latency:.2f} ms
-P95 Latency: {p95_latency:.2f} ms
-Total Processing Time: {total_processing_time:.2f} seconds
+
+Average FPS:
+{average_fps:.2f}
+
+Average latency:
+{average_latency:.2f} ms
+
+P95 latency:
+{p95_latency:.2f} ms
+
+Total processing time:
+{total_processing_time:.2f} seconds
+
+========== CONFIDENCE ==========
+
+Average confidence:
+{average_confidence:.4f}
+
+Minimum confidence:
+{minimum_confidence:.4f}
+
+Maximum confidence:
+{maximum_confidence:.4f}
 
 ========== RESOURCES ==========
-Average Process CPU: {average_process_cpu:.2f}%
-Peak Process CPU: {peak_process_cpu:.2f}%
-Average Process RAM: {average_process_ram:.2f} MB
-Peak Process RAM: {peak_process_ram:.2f} MB
 
-Average System CPU: {average_system_cpu:.2f}%
-Peak System CPU: {peak_system_cpu:.2f}%
+Average process CPU:
+{average_process_cpu:.2f}%
+
+Peak process CPU:
+{peak_process_cpu:.2f}%
+
+Average process RAM:
+{average_process_ram:.2f} MB
+
+Peak process RAM:
+{peak_process_ram:.2f} MB
+
+Average system CPU:
+{average_system_cpu:.2f}%
+
+Peak system CPU:
+{peak_system_cpu:.2f}%
 
 ========== OUTPUTS ==========
-Video: {absolute_video_path}
-JSON: {absolute_json_path}
-Log: {absolute_log_path}
+
+Video:
+{os.path.abspath(OUTPUT_VIDEO)}
+
+Detection JSON:
+{os.path.abspath(OUTPUT_DETECTIONS)}
+
+Metrics JSON:
+{os.path.abspath(OUTPUT_METRICS)}
+
+Log:
+{os.path.abspath(OUTPUT_LOG)}
 
 ===================================
 """
 
-
     with open(
-        LOG_PATH,
+        OUTPUT_LOG,
         "w",
         encoding="utf-8"
     ) as file:
-
         file.write(log_content)
 
-
     # ========================================================
-    # FINAL TERMINAL OUTPUT
+    # FINAL RESULTS
     # ========================================================
 
     print()
+    print("=" * 60)
     print("========== DEEP SORT RESULTS ==========")
+    print("=" * 60)
 
     print(
-        f"Total frames: {total_frames}"
+        f"Total frames: {frame_number}"
     )
 
     print(
@@ -935,6 +856,11 @@ Log: {absolute_log_path}
     print(
         f"Longest track lifetime: "
         f"{longest_track_lifetime} frames"
+    )
+
+    print(
+        f"Average confidence: "
+        f"{average_confidence:.4f}"
     )
 
     print(
@@ -987,33 +913,31 @@ Log: {absolute_log_path}
         f"{peak_system_cpu:.2f}%"
     )
 
-    print()
-
     print(
         f"Tracked video: "
-        f"{absolute_video_path}"
+        f"{OUTPUT_VIDEO}"
     )
 
     print(
         f"Detections JSON: "
-        f"{os.path.abspath(DETECTIONS_JSON_PATH)}"
+        f"{OUTPUT_DETECTIONS}"
     )
 
     print(
         f"Metrics JSON: "
-        f"{absolute_json_path}"
+        f"{OUTPUT_METRICS}"
     )
 
     print(
         f"Log file: "
-        f"{absolute_log_path}"
+        f"{OUTPUT_LOG}"
     )
 
-    print("======================================")
+    print("=" * 60)
 
 
 # ============================================================
-# IMPORTANT
+# ENTRY POINT
 # ============================================================
 
 if __name__ == "__main__":
