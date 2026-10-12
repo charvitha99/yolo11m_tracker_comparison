@@ -1,0 +1,41 @@
+{
+    "model": "yolo11m.engine",
+    "format": "TensorRT",
+    "video": "PNNL_Parking_LOT(1).avi",
+    "inference_settings": {
+        "imgsz": 640,
+        "confidence_threshold": 0.25,
+        "iou_threshold": 0.7,
+        "device": "cuda:0"
+    },
+    "video_information": {
+        "total_frames": 998
+    },
+    "performance": {
+        "total_processing_time_seconds": 22.02,
+        "average_processing_fps": 45.33,
+        "average_inference_time_ms": 10.3,
+        "inference_fps": 97.07
+    },
+    "detection": {
+        "total_detections": 13287,
+        "average_confidence": 0.7287,
+        "minimum_confidence": 0.25,
+        "maximum_confidence": 0.9318,
+        "class_counts": {
+            "class2": 3533,
+            "class0": 9703,
+            "class26": 45,
+            "class38": 3,
+            "class1": 3
+        }
+    },
+    "evaluation": {
+        "precision": null,
+        "recall": null,
+        "f1_score": null,
+        "map50": null,
+        "map50_95": null,
+        "iou": null
+    }
+}
