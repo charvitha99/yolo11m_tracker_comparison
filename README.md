@@ -201,5 +201,4 @@ Precision, recall, F1-score, mAP@50, mAP@50–95, and IoU are currently reported
 - Generate plots and structured benchmark reports.
 
 ## Author
-
-Developed as a YOLO11m inference performance comparison project covering PyTorch, ONNX, and TensorRT.
+P.Charvitha
